@@ -1,9 +1,9 @@
 const openConection = () => {
-  return openDatabase('myShoppingdb', '1.0', 'db app compras', 2 * 1024 * 1024)
-  // return window.sqlitePlugin.openDatabase({
-  //   name: 'myShopping.db',
-  //   location: 'default'
-  // })
+  // return openDatabase('myShoppingdb', '1.0', 'db app compras', 2 * 1024 * 1024) // conexão web sql
+  return window.sqlitePlugin.openDatabase({ // conexão sqlite-plugin
+    name: 'myShopping.db',
+    location: 'default'
+  })
 }
 
 const createDB = () => {
