@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.1.2",
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "babel-loader": "^8.0.6",
     "quasar": "^1.0.0-rc.3",
     "vue-i18n": "^7.3.3",
