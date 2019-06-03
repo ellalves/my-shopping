@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="org.cordova.quasar.app" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="br.com.webxpertise.minhascompras.app" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Minhas compras</name>
-    <description>A Quasar Framework app</description>
-    <author email="dev@cordova.apache.org" href="http://cordova.io">
-        Apache Cordova Team
+    <description>App para controle de compras no mercado!</description>
+    <author email="everton@webxpertise.com.br" href="http://ellalves.net.br">
+        Ell Alves
     </author>
     <content src="index.html" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
@@ -16,6 +16,13 @@
     <allow-intent href="geo:*" />
     <platform name="android">
         <allow-intent href="market:*" />
+        <splash density="port-xhdpi" src="../src/statics/mc-port-xhdpi720x1280.png" />
+        <splash density="land-hdpi" src="../src/statics/mc-land-xhdpi1280x720.png" />
+        <icon src="../src/statics/logotipo-mc-transparent.png" />
+        <preference name="SplashMaintainAspectRatio" value="true" />
+        <preference name="SplashShowOnlyFirstTime" value="true" />
+        <preference name="SplashScreenSpinnerColor" value="white" />
+        <preference name="SplashScreenDelay" value="3000" />
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />

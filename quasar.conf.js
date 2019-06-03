@@ -6,7 +6,9 @@ module.exports = function (ctx) {
     // --> boot files are part of "main.js"
     boot: [
       'i18n',
-      'axios'
+      'axios',
+      'sqlite',
+      'vuelidate'
     ],
 
     css: [
@@ -15,10 +17,10 @@ module.exports = function (ctx) {
 
     extras: [
       'roboto-font',
-      'material-icons' // optional, you are not bound to it
+      'material-icons', // optional, you are not bound to it
       // 'ionicons-v4',
       // 'mdi-v3',
-      // 'fontawesome-v5',
+      'fontawesome-v5'
       // 'eva-icons'
     ],
 
@@ -47,9 +49,14 @@ module.exports = function (ctx) {
         'QDialog',
         'QCard',
         'QCardSection',
+        'QCardActions',
         'QForm',
         'QInput',
+        'QSelect',
         'QSpace',
+        'QScrollArea',
+        'QBadge',
+        'QBar',
         'QFooter'
       ],
 
@@ -141,7 +148,7 @@ module.exports = function (ctx) {
     },
 
     cordova: {
-      // id: 'org.cordova.quasar.app'
+      id: 'br.com.webxpertise.minhascompras.app'
       // noIosLegacyBuildFlag: true // uncomment only if you know what you are doing
     },
 

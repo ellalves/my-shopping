@@ -2,14 +2,18 @@
 const routes = [
   {
     path: '/',
-    component: () => import('layouts/MyLayout.vue'),
+    component: () => import('layouts/SoftwareAsAServiceLayout.vue'),
     children: [
       { path: '', name: 'home', component: () => import('pages/Index.vue') },
-      { path: 'about', name: 'about', component: () => import('pages/frontend/About.vue') },
       {
-        path: 'listProducts',
-        name: 'listProducts',
-        component: () => import('pages/backend/listProducts.vue')
+        path: 'marksList',
+        name: 'marksList',
+        component: () => import('pages/backend/MarksList.vue')
+      },
+      {
+        path: 'productsList',
+        name: 'productsList',
+        component: () => import('pages/backend/ProductsList.vue')
       }
     ]
   }

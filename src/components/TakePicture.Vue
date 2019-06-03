@@ -1,9 +1,17 @@
 <template>
-  <q-page class="flex flex-center">
-    Minhas Compras v.1.0
-    Copyright 2019 - Webxpertise. Todos os direitos reservados
-    <div>IMEI <br> {{IMEI}}</div>
-  </q-page>
+  <div>
+    <q-btn color="primary" icon="add_a_photo" label="Tirar uma foto" @click="captureImage('CAMERA')" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-xs']" />
+    <q-btn color="positive" icon="add_photo_alternate" label="Pegar do álbum" @click="captureImage('PHOTOLIBRARY')" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-xs']" />
+    <q-img
+      :src="imageSrc"
+      style="max-width: 100%; height: 150px;"
+      placeholder-src="statics/quasar-logo.png"
+      :alt="'Imagem: ' + imageSrc" id="photo"
+    />
+    <div v-if="imageSrc">
+      <q-btn color="negative" icon="clear" @click.native="clearImage"> Limpar imagem </q-btn>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -11,8 +19,7 @@ export default {
   data () {
     return {
       imageSrc: '',
-      sourceType: 'CAMERA',
-      IMEI: window.device === void 0 ? 'Espere ... localizando seu dispositivo mobile/tablet' : window.device
+      sourceType: 'CAMERA'
     }
   },
 
@@ -56,3 +63,6 @@ export default {
   }
 }
 </script>
+
+<style>
+</style>
