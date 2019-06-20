@@ -8,7 +8,8 @@ module.exports = function (ctx) {
       'i18n',
       'axios',
       'sqlite',
-      'vuelidate'
+      'vuelidate',
+      'ga'
     ],
 
     css: [
@@ -45,6 +46,7 @@ module.exports = function (ctx) {
         'QItem',
         'QItemSection',
         'QItemLabel',
+        'QExpansionItem',
         'QImg',
         'QDialog',
         'QCard',
@@ -53,21 +55,38 @@ module.exports = function (ctx) {
         'QForm',
         'QInput',
         'QSelect',
+        'QRadio',
+        'QOptionGroup',
+        'QBtnToggle',
+        'QCheckbox',
+        'QEditor',
         'QSpace',
         'QScrollArea',
         'QBadge',
         'QBar',
+        'QTooltip',
+        'QToggle',
+        'QInfiniteScroll',
+        'QSpinnerDots',
+        'QPageScroller',
+        'QSlider',
+        'QSeparator',
+        'QPagination',
         'QFooter'
       ],
 
       directives: [
         'Ripple',
-        'ClosePopup'
+        'ClosePopup',
+        'GoBack',
+        'TouchSwipe'
       ],
 
       // Quasar plugins
       plugins: [
-        'Notify'
+        'Notify',
+        'LocalStorage',
+        'SessionStorage'
       ]
 
       // iconSet: 'ionicons-v4'

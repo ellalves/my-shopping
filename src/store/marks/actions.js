@@ -17,9 +17,13 @@ const readSelect = ({ commit }, params) => {
     })
   })
 }
-const read = ({ commit }) => {
+const read = ({ commit }, obj) => {
   let data = []
-  data['sql'] = `SELECT * FROM marks`
+  // limit: [limit, offset]
+  if (obj.hasOwnProperty('limit') && obj.limit.length > 0) {
+    var limit = obj.limit.length === 1 ? obj.limit[0] : obj.limit.join(',')
+  }
+  data['sql'] = `SELECT * FROM marks ${limit ? 'LIMIT ' + limit : ''}`
   data['array'] = []
   return new Promise((resolve, reject) => {
     let db = Vue.prototype.$sqlite
@@ -55,8 +59,8 @@ const readOne = ({ commit }, params) => {
 
 const create = ({ commit }, params) => {
   let data = []
-  data['sql'] = `INSERT INTO marks (name, image) VALUES (?,?)`
-  data['array'] = [params.name, params.image]
+  data['sql'] = `INSERT INTO marks (name, image, user_id) VALUES (?,?,?)`
+  data['array'] = [params.name, params.image, params.user_id]
   return new Promise((resolve, reject) => {
     let db = Vue.prototype.$sqlite
     db.transaction(function (tx) {
@@ -70,10 +74,9 @@ const create = ({ commit }, params) => {
 }
 
 const update = ({ commit }, params) => {
-  alert('params1 ' + JSON.stringify(params))
   let data = []
-  data['sql'] = `UPDATE marks SET name = ?, mark_id = ?, image = ? WHERE id = ?`
-  data['array'] = [params.name, params.mark_id, params.image, params.id]
+  data['sql'] = `UPDATE marks SET name = ?, image = ? WHERE id = ?`
+  data['array'] = [params.name, params.image, params.id]
   let db = Vue.prototype.$sqlite
   return new Promise((resolve, reject) => {
     db.transaction(function (tx) {

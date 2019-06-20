@@ -3,49 +3,51 @@
     <q-toolbar class="bg-secondary text-white shadow-2">
       <q-toolbar-title>
         <q-btn flat icon="keyboard_arrow_left" v-go-back.single />
-        Lista de marcas
+        Lista de mercados
       </q-toolbar-title>
       <q-btn flat left dense label="Novo" icon="add_circle_outline" class="cursor-pointer" @click.native="dialogSave('create', null)" />
     </q-toolbar>
     <q-list bordered separator>
-      <q-item clickable v-ripple v-for="mark in marks" :key="mark.id">
+      <q-item clickable v-ripple v-for="market in markets" :key="market.id">
         <q-item-section top avatar>
           <q-avatar rounded>
-            <q-img :src="mark.image !== null ? mark.image : './statics/mc-up-transparent.png'" :alt="mark.image" placeholder-src="./statics/mc-up-transparent.png" />
+            <q-img :src="market.image !== null ? market.image : './statics/quasar-logo.png'" :alt="market.image" placeholder-src="./statics/mc-up-transparent.png" />
           </q-avatar>
         </q-item-section>
 
-        <q-item-section @click.native="dialogSave('update', mark)">
-          <q-item-label>{{mark.name}}</q-item-label>
-          <q-item-label caption>#ID: {{mark.id}}</q-item-label>
+        <q-item-section @click.native="dialogSave('update', market)">
+          <q-item-label>{{market.name}}</q-item-label>
+          <q-item-label caption>#ID: {{market.id}}</q-item-label>
+          <q-item-label caption>Marca: {{market.mark}}</q-item-label>
+          <q-item-label caption>Atualização: {{ formatDateTime(market.created) }}</q-item-label>
         </q-item-section>
       </q-item>
     </q-list>
-    <q-btn
-      @click.native="setPaginate(perPage)"
-      color="secondary"
-      label="Mais produtos ..."
-      v-if="showMore" class="full-width"
-      :loading="loadPage"
-    />
 
     <!--// Save //-->
     <q-dialog v-model="mSave">
       <q-card style="width: 700px max-width: 80vw">
         <q-card-section class="row items-center">
-          <div class="text-h6"> {{titleMark}} </div>
+          <div class="text-h6"> {{titleMarket}} </div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section>
-          <take-picture :srcImage="mark.image" @takeImage="returnImg"></take-picture>
+          <take-picture :srcImage="market.image" @takeImage="returnImg"></take-picture>
           <q-form>
             <q-input
-              v-model="mark.name"
-              label="Nome da marca"
+              ref="input"
+              v-model="market.name"
+              label="Nome do mercado *"
+              :rules="[
+                  val => !!val || '* Não pode ser vazio',
+                  val => val.length < 3 || 'Por favor use no minímo 3 caractere',
+                ]"
+              lazy-rules
             />
-            <q-btn icon="save" color="positive" label="Salvar" @click.native="saveProduct()" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" />
+
+            <q-btn icon="save" color="positive" label="Salvar" @click.native="saveMarket()" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" />
             <q-btn icon="delete_forever" color="negative" label="Deletar" v-close-popup @click.native="mDelete = true" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" v-if="this.type == 'update'" />
           </q-form>
         </q-card-section>
@@ -56,7 +58,7 @@
     <q-dialog v-model="mDelete" persistent>
       <q-card>
         <q-card-section class="row items-center">
-          <div class="text-h6">Deletar registro: {{this.mark.name}}</div>
+          <div class="text-h6">Deletar registro: {{this.market.name}}</div>
         </q-card-section>
         <q-card-section class="row items-center">
           <q-avatar icon="delete_outline" color="negative" text-color="white" />
@@ -65,7 +67,7 @@
 
         <q-card-actions class="float-right">
           <q-btn flat label="Não" color="info" v-close-popup />
-          <q-btn flat label="Sim" color="negative" @click.native="deletarProduct" v-close-popup />
+          <q-btn flat label="Sim" color="negative" @click.native="deletarMarket" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -73,55 +75,73 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 import { price } from '../../components/mixins/price'
+import { dateTime } from '../../components/mixins/dateTime'
 import TakePicture from '../../components/global/TakePicture'
 
 export default {
-  name: 'listMarks',
+  name: 'listMarkets',
 
   created () {
-    this.setPaginate(this.perPage)
+    this.listMarkets()
   },
 
   data () {
     return {
-      titleMark: 'Adicionar marca',
+      options: [],
+      mark: {},
+      stringOptions: [],
+      titleMarket: 'Adicionar produto',
       sourceType: 'CAMERA',
       type: 'add',
       mSave: false,
       mDelete: false,
-      mark: {
+      market: {
         id: null,
         name: '',
         image: null,
-        mark_id: 1,
-        user_id: 1
+        user_id: 1,
+        created: null
       },
-      marks: {},
-      limit: 5,
-      showMore: true,
-      totalPage: 1,
-      perPage: 10,
-      loadPage: false
+      errors: [],
+      markets: {},
+      total: 0.0
     }
   },
 
+  computed: {
+    ...mapState('auth', ['me'])
+  },
+
   methods: {
-    setPaginate (more) {
-      this.limit += more
-      this.listMarks(this.limit)
-    },
-    ...mapActions('marks', ['createDB', 'read', 'readOne', 'create', 'update', 'destroy']),
-    dialogSave (type, mark) {
+    ...mapActions('markets', ['createDB', 'read', 'select', 'readOne', 'create', 'update', 'destroy']),
+    ...mapActions('marks', {
+      lsts: 'read',
+      readSelect: 'readSelect'
+    }),
+
+    dialogSave (type, market) {
       this.mSave = true
       this.type = type
-      this.mark = {}
+      this.market = {}
+      this.market.user_id = this.me.id
+      this.listMarkets('')
       if (type === 'update') {
-        this.titleMark = 'Alterar marca'
-        // alert('prodList: ' + JSON.stringify(mark))
-        this.readOne(mark).then((res) => {
-          this.mark = res.item(0)
+        this.titleMarket = 'Alterar mercado'
+        let obj = {
+          table: 'markets',
+          fields: ['id'],
+          values: [market.id],
+          conditions: 'where'
+        }
+        this.readOne(obj).then((res) => {
+          this.market = res.item(0)
+          this.mark = { // Formata os dados para o select
+            label: this.market.mark,
+            value: this.market.mark_id,
+            icon: null
+          }
         }).catch(() => {
           this.$q.notify({
             message: 'Oooops! Ocorreu um erro inesperado.',
@@ -134,12 +154,17 @@ export default {
       }
     },
 
-    saveProduct () {
-      this.mark.user_id = 1
+    saveMarket () {
       if (this.type === 'update') {
-        this.update(this.mark).then(() => {
+        let obj = {
+          table: 'markets',
+          fields: ['name', 'image', 'user_id', 'modified'],
+          values: [this.market.name, this.market.image, this.market_id, this.formatDateTimeDb(new Date())],
+          conditions: [{ id: this.market.id }]
+        }
+        this.update(obj).then(() => {
           this.$q.notify({
-            message: 'Produto atualizado com sucesso!',
+            message: 'Supermercado atualizado com sucesso!',
             color: 'green-10',
             position: 'center',
             icon: 'done_outline',
@@ -155,17 +180,23 @@ export default {
           })
         })
       } else {
-        this.create(this.mark).then(() => {
+        let obj = {
+          table: 'markets',
+          fields: ['name', 'image', 'user_id', 'created'],
+          values: [this.market.name, this.market.image, this.market.user_id, this.formatDateTimeDb(new Date())]
+        }
+        this.create(obj).then((res) => {
+          console.log(res)
           this.$q.notify({
-            message: 'Produto adicionado com sucesso!',
+            message: 'Supermercado adicionado com sucesso!',
             color: 'green-10',
             position: 'center',
             icon: 'done_outline',
             timeout: Math.random() * 1500
           })
-        }).catch((err) => {
+        }).catch(() => {
           this.$q.notify({
-            message: 'Oooops! Ocorreu um erro inesperado.' + JSON.stringify(err.message),
+            message: 'Oooops! Ocorreu um erro inesperado.',
             color: 'red-10',
             position: 'center',
             icon: 'error_outline',
@@ -173,20 +204,24 @@ export default {
           })
         })
       }
-      this.listMarks(this.limit)
+      this.listMarkets()
       this.mSave = false
     },
 
-    deletarProduct () {
-      this.destroy(this.mark).then(() => {
+    deletarMarket () {
+      let obj = {
+        table: 'markets',
+        conditions: [{ id: this.market.id }]
+      }
+      this.destroy(obj).then(() => {
         this.$q.notify({
-          message: 'Produto deletado com sucesso!',
+          message: 'Supermercado deletado com sucesso!',
           color: 'green-10',
           position: 'center',
           icon: 'done_outline',
           timeout: Math.random() * 1500
         })
-        this.listMarks(this.limit)
+        this.listMarkets()
       }).catch(() => {
         this.$q.notify({
           message: 'Oooops! Ocorreu um erro inesperado.',
@@ -198,28 +233,24 @@ export default {
       })
     },
 
-    listMarks (limit) {
-      this.loadPage = true
-      this.read({ limit: [limit] }).then((results) => {
-        var len = results.rows.length
-        this.limit = len
-        this.marks = []
+    listMarkets () {
+      let obj = {
+        table: 'markets',
+        values: [],
+        conditions: null
+      }
+      this.read(obj).then((results) => {
+        var len = results.length
+        this.markets = []
         for (var i = 0; i < len; i++) {
-          this.marks.push(results.rows.item(i))
+          this.markets.push(results.item(i))
         }
-      })
-      this.read({}).then((results) => {
-        this.totalPage = results.rows.length
-        if (this.totalPage <= this.limit) {
-          this.showMore = false
-        }
-        this.loadPage = false
       })
     },
 
     returnImg (img) {
       // Recebe os dados que foram retornado pelo $emit
-      this.mark.image = img
+      this.market.image = img
     }
   },
 
@@ -227,7 +258,7 @@ export default {
     TakePicture
   },
 
-  mixins: [price]
+  mixins: [price, dateTime]
 }
 </script>
 

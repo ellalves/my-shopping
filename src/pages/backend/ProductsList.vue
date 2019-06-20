@@ -1,26 +1,42 @@
 <template>
-  <q-page padding>
-    <!-- content -->
-    <q-btn color="primary" label="Adicionar" @click.native="dialogSave('create', null)" />
+  <q-page>
+    <q-toolbar class="bg-secondary text-white shadow-2">
+      <q-toolbar-title>
+        <q-btn flat icon="keyboard_arrow_left" v-go-back.single />
+        Lista de produtos
+      </q-toolbar-title>
+      <q-btn flat left dense label="Novo" icon="add_circle_outline" class="cursor-pointer" @click.native="dialogSave('create', null)" />
+    </q-toolbar>
     <q-list bordered separator>
-      <q-item clickable v-ripple>
-        <q-item-section>Lista de produtos</q-item-section>
-      </q-item>
-
       <q-item clickable v-ripple v-for="product in products" :key="product.id">
         <q-item-section top avatar>
           <q-avatar rounded>
-            <q-img :src="product.image !== null ? product.image : ''" :alt="product.image" />
+            <q-img :src="product.image" :alt="product.image" placeholder-src="./statics/mc-up-transparent.png" />
           </q-avatar>
         </q-item-section>
 
-        <q-item-section @click.native="dialogSave('update', product)">
+        <q-item-section>
           <q-item-label>{{product.name}}</q-item-label>
           <q-item-label caption>#ID: {{product.id}}</q-item-label>
           <q-item-label caption>Marca: {{product.mark}}</q-item-label>
+          <q-item-label caption>Atualização: {{ formatDateTime(product.created) }}</q-item-label>
+        </q-item-section>
+
+        <q-item-section top side>
+          <div class="text-grey-8 q-gutter-xs">
+            <q-btn flat dense round icon="border_color" color="positive" @click.native="dialogSave('update', product)" />
+            <q-btn flat dense round icon="delete_forever" color="negative" @click.native="mDelete = true" />
+          </div>
         </q-item-section>
       </q-item>
     </q-list>
+
+    <q-btn
+    @click.native="setPaginate(perPage)"
+    color="secondary" label="Mais produtos ..."
+    v-if="showMore"
+    :loading="loadPage"
+    class="full-width" />
 
     <!--// Save //-->
     <q-dialog v-model="mSave">
@@ -32,29 +48,13 @@
         </q-card-section>
 
         <q-card-section>
-          <div class="q-gutter-sm row">
-            <div class="col-6">
-              <q-btn color="primary" icon="add_a_photo" label="Tirar uma foto" @click="captureImage('CAMERA')" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" />
-              <q-btn color="positive" icon="add_photo_alternate" label="Pegar do álbum" @click="captureImage('PHOTOLIBRARY')" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" />
-            </div>
-            <q-img
-              class="col-5"
-              :src="product.image"
-              placeholder-src="statics/quasar-logo.png"
-              :alt="'Imagem: ' + product.image" id="photo"
-            >
-            <div v-if="product.image" class="absolute-bottom-right" style="border-top-left-radius: 5px">
-              <q-btn icon="clear" @click.native="clearImage"> Apagar imagem </q-btn>
-            </div>
-            </q-img>
-          </div>
-
+          <take-picture :srcImage="product.image" @takeImage="returnImg"></take-picture>
           <q-form>
             <q-input
               ref="input"
               v-model="product.name"
               label="Nome do produto *"
-              :rules="[ checkProductName ]"
+              :rules="[ val => !!val || 'O nome do produto é obrigatório!!' ]"
             />
 
             <q-select
@@ -85,13 +85,14 @@
               <template v-slot:no-option>
                 <q-item>
                   <q-item-section>
-                    <div class="text-red"> 0">Sem registros</div>
+                    <div class="text-red"> Sem registros</div>
+                    <q-btn flat :to="{ name: 'marksList' }" label="Adicionar marca" />
                   </q-item-section>
                 </q-item>
               </template>
             </q-select>
             <q-btn icon="save" color="positive" label="Salvar" @click.native="saveProduct()" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" />
-            <q-btn icon="delete_forever" color="negative" label="Deletar" v-close-popup @click.native="mDelete = true" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md float-right']" v-if="this.type == 'update'"/>
+            <q-btn icon="delete_forever" color="negative" label="Deletar" v-close-popup @click.native="mDelete = true" :class="[{'full-width': this.$q.platform.is.mobile}, 'q-mt-md']" v-if="this.type == 'update'" />
           </q-form>
         </q-card-section>
       </q-card>
@@ -118,15 +119,17 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 import { price } from '../../components/mixins/price'
+import { dateTime } from '../../components/mixins/dateTime'
+import TakePicture from '../../components/global/TakePicture'
 
 export default {
   name: 'listProducts',
 
   created () {
-    // this.createDB()
-    this.listProducts()
+    this.setPaginate(0)
+    // this.listProducts(this.limit)
   },
 
   data () {
@@ -143,39 +146,31 @@ export default {
         id: null,
         name: '',
         image: null,
-        mark_id: 1
+        mark_id: 1,
+        user_id: 1,
+        created: null
       },
+      limit: 10,
+      showMore: true,
+      totalPage: 1,
+      perPage: 5,
+      loadPage: false,
       errors: [],
-      products: {},
-      total: 0.0
+      products: {}
     }
   },
 
+  computed: {
+    ...mapState('auth', ['me'])
+  },
+
   methods: {
-    ...mapActions('products', ['createDB', 'read', 'select', 'readOne', 'create', 'update', 'destroy']),
-    checkProductName (val) {
-      if (val === '') {
-        return 'Não pode ser vazio'
-      }
-
-      if (val) {
-        let obj = {
-          table: 'products',
-          select: [],
-          fields: ['name'],
-          values: [val],
-          conditions: 'where'
-        }
-        return this.readOne(obj).then((res) => {
-          if (res.length === 1) {
-            return 'O Produto já está cadastrado!'
-          }
-        })
-      }
+    setPaginate (more) {
+      this.limit += more
+      this.listProducts(this.limit)
     },
-
+    ...mapActions('products', ['createDB', 'read', 'select', 'readOne', 'create', 'update', 'destroy']),
     ...mapActions('marks', {
-      lsts: 'read',
       readSelect: 'readSelect'
     }),
 
@@ -183,8 +178,7 @@ export default {
       this.readSelect({ name: val }).then((results) => {
         var len = results.rows.length
         this.stringOptions = []
-        this.total = 0
-        for (var i = 0; i < len; i++) {
+        for (let i = 0; i < len; i++) {
           let row = results.rows.item(i)
           this.stringOptions[i] = {
             value: row.id,
@@ -211,12 +205,13 @@ export default {
       this.mSave = true
       this.type = type
       this.product = {}
+      this.product.user_id = this.me.id
       this.listMarks('')
       if (type === 'update') {
         this.titleProduct = 'Alterar produto'
         let obj = {
           table: 'products AS p',
-          select: ['p.id, p.name, p.mark_id, m.name AS mark'],
+          select: ['p.id, p.name, p.mark_id, p.image, m.name AS mark'],
           fields: ['p.id'],
           values: [product.id],
           conditions: 'where',
@@ -246,8 +241,8 @@ export default {
       if (this.type === 'update') {
         let obj = {
           table: 'products',
-          fields: ['name', 'image', 'mark_id'],
-          values: [this.product.name, this.product.image, this.product.mark_id],
+          fields: ['name', 'image', 'mark_id', 'user_id'],
+          values: [this.product.name, this.product.image, this.product.mark_id, this.product_id],
           conditions: [{ id: this.product.id }]
         }
         this.update(obj).then(() => {
@@ -270,8 +265,8 @@ export default {
       } else {
         let obj = {
           table: 'products',
-          fields: ['name, image, mark_id'],
-          values: [this.product.name, this.product.image, this.product.mark_id]
+          fields: ['name', 'image', 'mark_id', 'user_id', 'created'],
+          values: [this.product.name, this.product.image, this.product.mark_id, this.product.user_id, this.formatDateTimeDb(new Date())]
         }
         this.create(obj).then((res) => {
           this.$q.notify({
@@ -291,7 +286,7 @@ export default {
           })
         })
       }
-      this.listProducts()
+      this.listProducts(this.limit)
       this.mSave = false
     },
 
@@ -308,7 +303,7 @@ export default {
           icon: 'done_outline',
           timeout: Math.random() * 1500
         })
-        this.listProducts()
+        this.listProducts(this.limit)
       }).catch(() => {
         this.$q.notify({
           message: 'Oooops! Ocorreu um erro inesperado.',
@@ -320,62 +315,44 @@ export default {
       })
     },
 
-    listProducts () {
+    listProducts (limit) {
       let obj = {
         table: 'products AS p',
-        select: ['p.id, p.name, p.mark_id, m.name AS mark'],
+        select: ['p.id, p.name, p.mark_id, p.image, p.created, m.name AS mark'],
         values: [],
+        limit: [limit],
         conditions: null,
         join: [{ table: 'marks AS m', on: 'mark_id = m.id' }]
       }
+      this.loadPage = true
       this.read(obj).then((results) => {
         var len = results.length
+        this.limit = len
         this.products = []
         for (var i = 0; i < len; i++) {
           this.products.push(results.item(i))
         }
       })
-    },
-
-    captureImage (source) {
-      this.pictureSourceType(source) // Define se a foto virá da camera ou da galeria
-      navigator.camera.getPicture(
-        data => { // on success
-          this.product.image = `data:image/jpeg;base64, ${data}`
-        },
-        () => { // on fail
-          this.$q.notify('Não foi possível acessar a câmera do dispositivo!')
-        },
-        { // camera options
-          quality: 50,
-          destinationType: navigator.camera.DestinationType.DATA_URL,
-          encodingType: navigator.camera.EncodingType.JPEG,
-          sourceType: this.sourceType,
-          mediaType: navigator.camera.MediaType.PHOTOLIBRARY,
-          cameraDirection: navigator.camera.Direction.BACK,
-          correctOrientation: true,
-          saveToPhotoAlbum: true,
-          allowEdit: true,
-          targetWidth: 300,
-          targetHeight: 400
+      this.read({ table: 'products', values: [], conditions: null }).then((results) => {
+        this.totalPage = results.length
+        if (this.totalPage <= this.limit) {
+          this.showMore = false
         }
-      )
+        this.loadPage = false
+      })
     },
 
-    pictureSourceType (type) {
-      if (type === 'CAMERA') {
-        this.sourceType = navigator.camera.PictureSourceType.CAMERA
-      } else if (type === 'PHOTOLIBRARY') {
-        this.sourceType = navigator.camera.PictureSourceType.PHOTOLIBRARY
-      }
-    },
-
-    clearImage () {
-      this.product.image = ''
+    returnImg (img) {
+      // Recebe os dados que foram retornado pelo $emit
+      this.product.image = img
     }
   },
 
-  mixins: [price]
+  components: {
+    TakePicture
+  },
+
+  mixins: [price, dateTime]
 }
 </script>
 

@@ -1,8 +1,8 @@
 export default {
-  product: {
+  market: {
     rows: []
   },
-  products: {
+  markets: {
     row: []
   }
 }

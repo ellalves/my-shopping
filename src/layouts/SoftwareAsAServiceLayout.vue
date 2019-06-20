@@ -30,13 +30,13 @@
           <q-item class="bg-grey-3">
             <q-item-section avatar top>
               <q-avatar>
-                <img src="/statics/ellalves.png" height="50px" />
+                <q-img :src="me.image" height="50px" placeholder-src="./statics/user.png" />
               </q-avatar>
             </q-item-section>
 
             <q-item-section>
-              <q-item-label lines="1">Ell Alves</q-item-label>
-              <q-item-label caption>everton@webxpertise.com.br</q-item-label>
+              <q-item-label lines="1">{{me.username}}</q-item-label>
+              <q-item-label caption>{{me.email}}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item
@@ -54,7 +54,16 @@
               <q-item-label>{{menuItem.title}} </q-item-label>
             </q-item-section>
           </q-item>
-          <about></about>
+          <q-item>
+            <q-item-section avatar>
+              <q-icon name="exit_to_app" color="primary"/>
+            </q-item-section>
+
+            <q-item-section @click.native="logoutUser">
+              <q-item-label> Sair </q-item-label>
+            </q-item-section>
+          </q-item>
+          <about class="cursor-pointer"></about>
         </q-list>
       </q-scroll-area>
     </q-drawer>
@@ -108,18 +117,10 @@
 
     <q-footer elevated class="bg-primary text-white">
       <q-toolbar color="primary">
-        <q-toolbar-title class="row justify-between items-center gt-xs text-subtitle2">
-          <span>&copy; <a href="#" target="_blank" class="text-white">Your Awesome App</a> - v{{version}}</span>
-          <span class="on-right">
-            <a href="https://discordapp.com/channels/415874313728688138" target="_blank" style="color:white;" class="on-left">Support Chat</a>
-            <q-btn color="white" text-color="black" size="sm">Support</q-btn>
-          </span>
-        </q-toolbar-title>
         <q-toolbar-title class="row justify-center items-center lt-sm text-subtitle2">
-          <span>v{{version}}</span>
+          <span>Versão: v{{version}}</span>
           <span class="on-right">
-            <a href="https://discordapp.com/channels/415874313728688138" target="_blank" style="color:white;" class="on-left">Support Forum</a>
-            <q-btn color="white" text-color="black" icon="far fa-question-circle" size="sm"/>
+            <q-btn color="white" type="a" href="https://ellalves.net.br" target="_blank" text-color="black" icon="copyright" label="WebXpertise" size="sm" />
           </span>
         </q-toolbar-title>
       </q-toolbar>
@@ -129,37 +130,80 @@
 
 <script>
 import About from '../components/About'
+import { mapActions, mapGetters, mapState } from 'vuex'
+import ga from '../components/reports/analytics'
 
 export default {
+  created () {
+    this.isLoggedIn()
+    ga.logEvent('conversions', 'PurchaseDoneEvent', 'Purchase Done', '99.90')
+  },
+
+  computed: {
+    ...mapGetters('auth', ['isLogged']),
+    ...mapState('auth', ['me'])
+  },
+
   data () {
     return {
+      menuAuth: false,
       orientation: 'portrait-primary',
       navDrawer: true,
       miniNavDrawerState: true,
       rightDrawer: true,
-      version: '0.0.1-beta-1',
+      version: '0.0.1-beta',
       menu: [
         {
           icon: 'home',
           title: 'Página inicial',
-          to: { name: 'home' }
+          to: { name: 'home' },
+          auth: false
+        },
+        {
+          icon: 'how_to_reg',
+          title: 'Perfil',
+          to: { name: 'profile' },
+          auth: true
         },
         {
           icon: 'shop_two',
-          title: 'Compras',
-          to: { name: 'productsList' }
+          title: 'Produtos',
+          to: { name: 'productsList' },
+          auth: false
         },
         {
           icon: 'category',
           title: 'Marcas',
-          to: { name: 'marksList' }
+          to: { name: 'marksList' },
+          auth: false
         },
         {
-          icon: 'settings',
-          title: 'System',
-          to: '/system'
+          icon: 'location_city',
+          title: 'Mercados',
+          to: { name: 'marketsList' },
+          auth: false
+        },
+        {
+          icon: 'shopping_cart',
+          title: 'Minhas Listas',
+          to: { name: 'cart' },
+          auth: true
         }
       ]
+    }
+  },
+
+  methods: {
+    ...mapActions('auth', ['logout']),
+    isLoggedIn () {
+      if (!this.isLogged) {
+        this.logoutUser()
+      }
+    },
+
+    logoutUser () {
+      this.logout()
+      this.$router.push({ name: 'login' }) // Redireciona
     }
   },
 

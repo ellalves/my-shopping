@@ -1,8 +1,11 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import products from './products'
+import auth from './auth'
+import carts from './carts'
 import marks from './marks'
+import products from './products'
+import markets from './markets'
 
 Vue.use(Vuex)
 
@@ -15,8 +18,11 @@ export default function (/* { ssrContext } */) {
   const Store = new Vuex.Store({
     namespaced: true,
     modules: {
-      products,
-      marks
+      auth,
+      carts,
+      marks,
+      markets,
+      products
     },
 
     // enable strict mode (adds overhead!)

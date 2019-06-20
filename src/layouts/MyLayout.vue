@@ -4,33 +4,20 @@
     <q-header reveal bordered class="bg-primary text-white">
       <q-toolbar>
         <q-toolbar-title>
-          <q-img src="/statics/logo-transparent.png" alt="Minhas compras" style="width: 100%"/>
+          <q-img src="/statics/mc-left-transparent.png" alt="Minhas compras" />
         </q-toolbar-title>
       </q-toolbar>
 
-      <q-tabs
-        inline-label
-        class="bg-primary text-white shadow-2"
-      >
-        <q-route-tab :to="{ name: 'home'}" name="mails" icon="home" label="Home" />
-        <q-route-tab name="listProducts" icon="shop_two" label="Compras" :to="{ name: 'listProducts'}" />
-        <q-tab name="about" icon="contact_support" label="Sobre" @click.native="mAbout = true" />
+      <q-tabs inline-label class="bg-primary text-white shadow-2">
+        <q-route-tab :to="{ name: 'home'}" name="home" icon="home" label="Início" />
+        <q-route-tab :to="{ name: 'login'}" name="Sobre" icon="contact_support" label="Login" v-if="!isLogged" />
+        <q-route-tab :to="{ name: 'profile'}" name="Perfil" icon="how_to_reg" label="Perfil" v-else />
       </q-tabs>
     </q-header>
     <q-page-container>
       <router-view />
     </q-page-container>
 
-    <q-footer reveal bordered class="bg-secondary text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="/statics/ellalves.png" alt="logo ellalves">
-          </q-avatar>
-          <q-btn flat type="a" href="https://ellalves.net.br" label="Desenvolvido por Ellalves" />
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-footer>
     <q-dialog v-model="mAbout" class="flex flex-center">
       <q-card>
         <q-bar class="bg-primary text-white">
@@ -54,7 +41,7 @@
 
             <q-item clickable v-ripple>
               <q-item-section>
-                Versão: 1.0 <br />
+                Versão: 0.0.1-beta <br />
                 Copyright 2019 - WebXpertise. <br />
                 Todos os direitos reservados
               </q-item-section>
@@ -67,12 +54,17 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 export default {
   data () {
     return {
       mAbout: false,
       IMEI: window.device === void 0 ? 'Espere ... localizando seu dispositivo mobile/tablet' : window.device
     }
+  },
+
+  computed: {
+    ...mapGetters('auth', ['isLogged'])
   }
 }
 </script>
